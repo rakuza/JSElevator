@@ -1,0 +1,124 @@
+{
+    init: function(elevators, floors) {
+        var MedianFloor = Math.round(world.floors.length/2);
+        var FloorsWaitingUp = [];
+        var FloorsWaitingDown = [];
+        var idle = function(){
+                if(this.currentFloor>MedianFloor)
+                {
+                    console.log()
+                    //up high
+                    if(FloorsWaitingUp.length > 0)
+                    {
+                        console.log('uu');
+                        this.goToFloor(
+                            FloorsWaitingUp.splice(
+                                FloorsWaitingUp.indexOf(
+                                    Math.max.apply(null,FloorsWaitingUp)
+                                )
+                            ,1)
+                        );
+                    }
+                    else if(FloorsWaitingDown.length > 0)
+                    {
+                        console.log('ud');
+                        this.goToFloor(
+                            FloorsWaitingDown.splice(
+                                FloorsWaitingDown.indexOf(
+                                    Math.max.apply(null,FloorsWaitingDown)
+                                )
+                           ,1)
+                        );
+
+                    }
+                }
+                else
+                {
+                    //down low
+                    if(FloorsWaitingDown.length > 0)
+                    {
+                        console.log('dd');
+                         this.goToFloor(
+                             FloorsWaitingDown.splice(
+                                 FloorsWaitingDown.indexOf(
+                                     Math.min.apply(null,FloorsWaitingDown)
+                                 )
+                             ,1)
+                         );
+
+                    }
+                    else if(FloorsWaitingUp.length > 0)
+                    {
+                        console.log('du');
+                        this.goToFloor(
+                            FloorsWaitingUp.splice(
+                                FloorsWaitingUp.indexOf(
+                                    Math.min.apply(null,FloorsWaitingUp)
+                                )
+                            ,1)
+                        );
+                    }
+                }
+            
+                if(this.getPressedFloors().length>0)
+                {
+                    var pFloors = this.getPressedFloors();
+                    if(this.currentFloor>MedianFloor)
+                    {
+                        this.goToFloor(Math.max.apply(null,pFloors));
+                    }else
+                    {
+                        this.goToFloor(Math.min.apply(null,pFloors));
+                    }
+                }
+                this.goToFloor(0);
+            };
+        
+        //////////////////////////////////
+        
+        var passingFloor = function (floorNum,direction){
+            if(this.getPressedFloors().indexOf(floorNum) != -1)
+            {
+                var queue = this.destinationQueue.slice();
+                this.stop();
+                this.destinationQueue = queue;
+                this.checkDestinationQueue();
+            }
+        };
+        
+        
+        for(key in elevators)
+        {
+            idle.bind(elevators[key],MedianFloor,FloorsWaitingUp,FloorsWaitingDown);
+            passingFloor.bind(elevators[key]);
+            elevators[key].on("idle",idle);
+            elevators[key].on("passing_floor",passingFloor);
+        }
+        
+        var up = function(){
+                FloorsWaitingUp.push(this.level);
+                FloorsWaitingUp.sort();
+            };
+        
+        var down = function(){
+               FloorsWaitingDown.push(this.level);
+               FloorsWaitingDown.sort();
+            };
+
+        
+        for(key in floors)
+        {
+            
+            up.bind(floors[key],FloorsWaitingUp);
+            floors[key].on("up_button_pressed",up);
+            
+            
+            
+            down.bind(floors[key],FloorsWaitingDown);
+            floors[key].on("down_button_pressed",down);
+        }            
+    },
+    update: function(dt, elevators, floors) {
+        // We normally don't need to do anything here
+    }
+}
